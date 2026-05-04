@@ -34,6 +34,7 @@ const T = {
     createCategoryBtn:"Create Category", categoryNamePh:"e.g. Interact with us on X!",
     taskImage:"Task Image", taskImageHintFollow:"The instructional image shown in the Follow Task Guide Page.",
     taskImageHintComment:"The preview image of the target post shown on the Task Guide page for reference.",
+    englishTranslation:"English translation", englishName:"English Name", englishDescription:"English Description", englishPlaceholder:"Type English translation...", englishTranslationHint:"Enter the English translation when Chinese is entered.",
     uploadImage:"Click to upload image", socialUsername:"Social Media Username",
     helpTooltip:"Help Tooltip", helpTooltipHint:"An optional tooltip shown to users to guide them on this task.",
     helpTooltipPh:"e.g. Make sure your account is public before completing this task.",
@@ -87,6 +88,7 @@ const T = {
     createCategoryBtn:"创建分类", categoryNamePh:"例：在 X 上与我们互动！",
     taskImage:"任务图片", taskImageHintFollow:"在关注任务指南页面中显示的教学图片。",
     taskImageHintComment:"目标帖子的预览图片，显示在任务指南页面供参考。",
+    englishTranslation:"英文翻译", englishName:"英文名称", englishDescription:"英文描述", englishPlaceholder:"输入英文翻译...", englishTranslationHint:"当输入中文时，填写英文翻译。",
     uploadImage:"点击上传图片", socialUsername:"社交媒体用户名",
     helpTooltip:"帮助提示", helpTooltipHint:"可选提示，帮助用户完成任务。",
     helpTooltipPh:"例：完成前请确保账户公开。",
@@ -177,10 +179,6 @@ const mkTask = (id, type, name, desc, reward, extra={}) => ({
 });
 
 const INIT_CATEGORIES = [
-  { id:"cat_standalone", name:"Standalone Tasks", enabled:true, taskGroups:[], taskIcon:"", looseTasks:[
-    mkTask("st1","follow","Bind Email","Link your email address to your HZVPN account.",30,{url:null}),
-    mkTask("st2","follow","Invite a Friend","Invite a friend to download and register HZVPN.",10,{url:null})
-  ]},
   { id:"cat1", name:"Interact with us on X!", enabled:true, taskGroups:[], taskIcon:"x", looseTasks:[
     mkTask("t1","follow","Follow our X account!","Follow the official HZVPN X account and earn credits.",5,{url:"https://x.com/hzvpn"}),
     mkTask("t3","comment","Comment on our post!","Leave a comment on our latest X post using the provided template.",5,{url:"https://x.com/hzvpn/status/latest"}),
@@ -199,6 +197,42 @@ const getNow = () => {
   const n = new Date();
   return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")} ${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}:${String(n.getSeconds()).padStart(2,"0")}`;
 };
+const hasChinese = text => /[\u4e00-\u9fff]/.test(text);
+const TRANSLATION_DICTIONARY = {
+  "前台":"Foreground ",
+  "后台":"Background ",
+  "运行":"run ",
+  "模式":"mode ",
+  "任务":"Task ",
+  "分类":"Category ",
+  "评论":"Comment ",
+  "关注":"Follow ",
+  "邀请":"Invite ",
+  "朋友":"Friend ",
+  "邮箱":"Email ",
+  "链接":"Link ",
+  "帖子":"Post ",
+  "提交":"Submit ",
+  "截图":"Screenshot ",
+  "用户":"User ",
+  "账号":"account ",
+  "账户":"account ",
+  "地址":"address ",
+  "官方":"official ",
+  "最新":"latest ",
+  "活动":"Campaign ",
+  "奖励":"Reward ",
+  "积分":"Credits ",
+};
+const autoTranslate = text => {
+  if (!text || !hasChinese(text)) return "";
+  let result = text;
+  Object.entries(TRANSLATION_DICTIONARY).forEach(([zh,en]) => {
+    result = result.replaceAll(zh, en);
+  });
+  result = result.replace(/[，。！？、]/g, " ").replace(/\s+/g, " ").trim();
+  return result;
+};
 
 // ── Primitives ──────────────────────────────────────────────────────────────────
 const Pill = ({col,children}) => (
@@ -211,8 +245,9 @@ const Field = ({label,hint,children,mb="mb-3"}) => (
     {children}
   </div>
 );
-const TextIn = ({value,onChange,multiline,rows=2,ph="",disabled}) => {
-  const cls = "w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm outline-none bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition disabled:bg-gray-50 disabled:text-gray-400";
+const TextIn = ({value,onChange,multiline,rows=2,ph="",disabled,size="md",className=""}) => {
+  const spacing = size==="sm" ? "px-3 py-2" : "px-3.5 py-2.5";
+  const cls = `w-full border border-gray-200 rounded-xl ${spacing} text-sm outline-none bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition disabled:bg-gray-50 disabled:text-gray-400 ${className}`;
   if (multiline) return <textarea rows={rows} value={value} onChange={e=>onChange?.(e.target.value)} placeholder={ph} disabled={disabled} className={cls+" resize-none"}/>;
   return <input value={value} onChange={e=>onChange?.(e.target.value)} placeholder={ph} disabled={disabled} className={cls}/>;
 };
@@ -363,11 +398,7 @@ const ConfirmDialog = ({title,note,confirmLabel,confirmClass="bg-rose-500 hover:
 const RejectionReasonCrudModal = ({reasons,onChange,onClose}) => {
   const t = useLang();
   const [local,setLocal] = useState([...reasons]);
-  const [editingIdx,setEditingIdx] = useState(null);
-  const [editVal,setEditVal] = useState("");
   const [newVal,setNewVal] = useState("");
-  const startEdit = idx => { setEditingIdx(idx); setEditVal(local[idx]); };
-  const saveEdit = idx => { setLocal(p=>p.map((r,i)=>i===idx?editVal:r)); setEditingIdx(null); };
   const deleteReason = idx => setLocal(p=>p.filter((_,i)=>i!==idx));
   const addReason = () => { if (!newVal.trim()) return; setLocal(p=>[...p,newVal.trim()]); setNewVal(""); };
   return (
@@ -381,21 +412,8 @@ const RejectionReasonCrudModal = ({reasons,onChange,onClose}) => {
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2">
           {local.map((r,idx) => (
             <div key={idx} className="flex items-center gap-2">
-              {editingIdx===idx ? (
-                <>
-                  <input value={editVal} onChange={e=>setEditVal(e.target.value)} autoFocus
-                    onKeyDown={e=>{if(e.key==="Enter")saveEdit(idx);if(e.key==="Escape")setEditingIdx(null);}}
-                    className="flex-1 border border-indigo-300 rounded-xl px-3.5 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-100"/>
-                  <Btn onClick={()=>saveEdit(idx)} variant="primary" size="sm">Save</Btn>
-                  <Btn onClick={()=>setEditingIdx(null)} variant="default" size="sm">{t.cancel}</Btn>
-                </>
-              ) : (
-                <>
-                  <span className="flex-1 text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2">{r}</span>
-                  <Btn onClick={()=>startEdit(idx)} variant="default" size="sm">✏️</Btn>
-                  <Btn onClick={()=>deleteReason(idx)} variant="danger" size="sm">✕</Btn>
-                </>
-              )}
+              <span className="flex-1 text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2">{r}</span>
+              <Btn onClick={()=>deleteReason(idx)} variant="danger" size="sm">✕</Btn>
             </div>
           ))}
         </div>
@@ -652,11 +670,21 @@ const FormBuilder = ({form,setForm,defaultForm,onSetDefault,onUseDefault}) => {
 const EditCategoryDrawer = ({category,onClose,onSave}) => {
   const t = useLang();
   const [name,setName] = useState(category.name||"");
+  const [englishName,setEnglishName] = useState(category.nameEn||"");
+  const [lastAutoName,setLastAutoName] = useState(category.nameEn||"");
   const [taskIcon,setTaskIcon] = useState(category.taskIcon||"");
+  const updateName = v => {
+    setName(v);
+    const auto = hasChinese(v) ? autoTranslate(v) : "";
+    if (!englishName || englishName === lastAutoName) { setEnglishName(auto); setLastAutoName(auto); }
+  };
   return (
     <DrawerShell title={name||t.editGroupTitle} subtitle={t.editGroupTitle} onClose={onClose}
-      footer={<><Btn onClick={onClose} variant="default" size="md">{t.cancel}</Btn><button onClick={()=>{onSave({...category,name,taskIcon});onClose();}} className="flex-1 py-2.5 rounded-2xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition">{t.saveChanges}</button></>}>
-      <SectionCard title={t.basicInfo}><Field label={t.taskName}><TextIn value={name} onChange={setName} ph={t.categoryNamePh}/></Field></SectionCard>
+      footer={<><Btn onClick={onClose} variant="default" size="md">{t.cancel}</Btn><button onClick={()=>{onSave({...category,name,nameEn:englishName.trim()||undefined,taskIcon});onClose();}} className="flex-1 py-2.5 rounded-2xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition">{t.saveChanges}</button></>}>
+      <SectionCard title={t.basicInfo}>
+        <Field label={t.taskName}><TextIn value={name} onChange={updateName} ph={t.categoryNamePh}/></Field>
+        {(hasChinese(name) || englishName) && <Field mb="mb-3"><div className="flex items-center gap-3"><span className="text-xs text-gray-500 font-semibold">Translation (EN):</span><TextIn value={englishName} onChange={setEnglishName} ph="" size="sm" className="flex-1"/></div></Field>}
+      </SectionCard>
       <IconPickerField value={taskIcon} onChange={setTaskIcon}/>
     </DrawerShell>
   );
@@ -672,7 +700,11 @@ const EditTaskDrawer = ({task,categories,sharedFollowForm,sharedCommentForm,onCl
   const [activeTab,setActiveTab] = useState("info");
   const [dirty,setDirty] = useState(false);
   const [name,setName] = useState(task.name||"");
+  const [englishName,setEnglishName] = useState(task.nameEn||"");
+  const [lastAutoName,setLastAutoName] = useState(task.nameEn||"");
   const [desc,setDesc] = useState(task.desc||"");
+  const [englishDesc,setEnglishDesc] = useState(task.descEn||"");
+  const [lastAutoDesc,setLastAutoDesc] = useState(task.descEn||"");
   const [reward,setReward] = useState(task.reward);
   const [url,setUrl] = useState(task.url||"");
   const [catId,setCatId] = useState(task._catId||categories[0]?.id||"");
@@ -682,12 +714,14 @@ const EditTaskDrawer = ({task,categories,sharedFollowForm,sharedCommentForm,onCl
   const isFollow = task.type==="follow";
   const [localForm,setLocalForm] = useState(()=>isFollow?JSON.parse(JSON.stringify(sharedFollowForm)):JSON.parse(JSON.stringify(sharedCommentForm)));
   const d = setter => v => { setter(v); setDirty(true); };
+  const updateName = v => { setName(v); setDirty(true); const auto = hasChinese(v) ? autoTranslate(v) : ""; if (!englishName || englishName === lastAutoName) { setEnglishName(auto); setLastAutoName(auto); } };
+  const updateDesc = v => { setDesc(v); setDirty(true); const auto = hasChinese(v) ? autoTranslate(v) : ""; if (!englishDesc || englishDesc === lastAutoDesc) { setEnglishDesc(auto); setLastAutoDesc(auto); } };
   const dForm = f => { setLocalForm(f); setDirty(true); };
   const showUrlField = cfg.hasUrl&&!isSpecial;
   const imageHint = isFollow?t.taskImageHintFollow:t.taskImageHintComment;
   const save = () => {
     const newGroupId = catId===task._catId?(task._groupId||"none"):"none";
-    onSave({...task,name,desc,reward,url:showUrlField?url:task.url,helpTooltip,taskImage:isSpecial?null:taskImage,templates:task.type==="comment"?templates:null,_newCatId:catId,_newGroupId:newGroupId});
+    onSave({...task,name,nameEn:englishName.trim()||undefined,desc,descEn:englishDesc.trim()||undefined,reward,url:showUrlField?url:task.url,helpTooltip,taskImage:isSpecial?null:taskImage,templates:task.type==="comment"?templates:null,_newCatId:catId,_newGroupId:newGroupId});
     if (showTabs&&cfg.hasForm&&onSaveForm) onSaveForm(isFollow?"follow":"comment",localForm);
     onClose();
   };
@@ -708,8 +742,10 @@ const EditTaskDrawer = ({task,categories,sharedFollowForm,sharedCommentForm,onCl
         <>
           <SectionCard title={t.basicInfo}>
             <Field label={t.category} hint={t.categoryHint}><SelectIn value={catId} onChange={d(setCatId)}>{categories.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</SelectIn></Field>
-            <Field label={t.taskName}><TextIn value={name} onChange={d(setName)} ph={t.taskNamePh}/></Field>
-            <Field label={t.description}><TextIn value={desc} onChange={d(setDesc)} multiline rows={3} ph={t.descPh}/></Field>
+            <Field label={t.taskName}><TextIn value={name} onChange={updateName} ph={t.taskNamePh}/></Field>
+            {(hasChinese(name) || englishName) && <Field mb="mb-3"><div className="flex items-center gap-3"><span className="text-xs text-gray-500 font-semibold">Translation (EN):</span><TextIn value={englishName} onChange={setEnglishName} ph="" size="sm" className="flex-1"/></div></Field>}
+            <Field label={t.description}><TextIn value={desc} onChange={updateDesc} multiline rows={3} ph={t.descPh}/></Field>
+            {(hasChinese(desc) || englishDesc) && <Field mb="mb-3"><div className="flex items-center gap-3"><span className="text-xs text-gray-500 font-semibold">Translation (EN):</span><TextIn value={englishDesc} onChange={setEnglishDesc} ph="" size="sm" className="flex-1"/></div></Field>}
           </SectionCard>
           <SectionCard title={t.helpTooltip} badge={t.optional}>
             <p className="text-xs text-gray-400 mb-3">{t.helpTooltipHint}</p>
@@ -749,6 +785,10 @@ const CreateTaskModal = ({categories,onClose,onSave,defaultForm,onSetDefaultForm
   const [catId,setCatId] = useState(categories[0]?.id||"");
   const [url,setUrl] = useState("");
   const [helpTooltip,setHelpTooltip] = useState("");
+  const [englishName,setEnglishName] = useState("");
+  const [englishDesc,setEnglishDesc] = useState("");
+  const [lastAutoName,setLastAutoName] = useState("");
+  const [lastAutoDesc,setLastAutoDesc] = useState("");
   const [enableNow,setEnableNow] = useState(false);
   const [taskImage,setTaskImage] = useState(null);
   const [templates,setTemplates] = useState(JSON.parse(JSON.stringify(INIT_COMMENT_TEMPLATES)));
@@ -759,9 +799,19 @@ const CreateTaskModal = ({categories,onClose,onSave,defaultForm,onSetDefaultForm
   const valid = name.trim();
   const imageHint = taskType==="follow"?t.taskImageHintFollow:t.taskImageHintComment;
   const switchType = type => { setTaskType(type); setLocalForm(getInitForm(type)); setFormSaved(false); if(type==="comment")setTemplates(JSON.parse(JSON.stringify(INIT_COMMENT_TEMPLATES))); };
+  const updateName = v => {
+    setName(v);
+    const auto = hasChinese(v) ? autoTranslate(v) : "";
+    if (!englishName || englishName === lastAutoName) { setEnglishName(auto); setLastAutoName(auto); }
+  };
+  const updateDesc = v => {
+    setDesc(v);
+    const auto = hasChinese(v) ? autoTranslate(v) : "";
+    if (!englishDesc || englishDesc === lastAutoDesc) { setEnglishDesc(auto); setLastAutoDesc(auto); }
+  };
   const save = () => {
     if (!valid) return;
-    const task = {id:`task_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,type:taskType,name,desc,reward,ver:cfg.ver,status:enableNow?"enabled":"disabled",url,taskImage,helpTooltip,templates:taskType==="comment"?templates:null};
+    const task = {id:`task_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,type:taskType,name,desc,reward,ver:cfg.ver,status:enableNow?"enabled":"disabled",url,taskImage,helpTooltip,nameEn:englishName.trim()||undefined,descEn:englishDesc.trim()||undefined,templates:taskType==="comment"?templates:null};
     onSave(catId,null,task,localForm);
     onClose();
   };
@@ -780,8 +830,10 @@ const CreateTaskModal = ({categories,onClose,onSave,defaultForm,onSetDefaultForm
       footer={<><Btn onClick={onClose} variant="default" size="md">{t.cancel}</Btn><button onClick={save} disabled={!valid} className={`flex-1 py-2 rounded-xl text-sm font-bold transition ${valid?"bg-indigo-600 hover:bg-indigo-700 text-white":"opacity-40 cursor-not-allowed bg-gray-200 text-gray-400"}`}>{t.createTaskBtn}</button></>}>
       <SectionCard title={t.basicInfo}>
         <Field label={t.category} hint={t.categoryHint}><SelectIn value={catId} onChange={setCatId}>{categories.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</SelectIn></Field>
-        <Field label={t.taskName}><TextIn value={name} onChange={setName} ph={t.taskNamePh}/></Field>
-        <Field label={t.description}><TextIn value={desc} onChange={setDesc} multiline rows={3} ph={t.descPh}/></Field>
+        <Field label={t.taskName}><TextIn value={name} onChange={updateName} ph={t.taskNamePh}/></Field>
+        {(hasChinese(name) || englishName) && <Field mb="mb-3"><div className="flex items-center gap-3"><span className="text-xs text-gray-500 font-semibold">Translation (EN):</span><TextIn value={englishName} onChange={setEnglishName} ph="" size="sm" className="flex-1"/></div></Field>}
+        <Field label={t.description}><TextIn value={desc} onChange={updateDesc} multiline rows={3} ph={t.descPh}/></Field>
+        {(hasChinese(desc) || englishDesc) && <Field mb="mb-3"><div className="flex items-center gap-3"><span className="text-xs text-gray-500 font-semibold">Translation (EN):</span><TextIn value={englishDesc} onChange={setEnglishDesc} ph="" size="sm" className="flex-1"/></div></Field>}
       </SectionCard>
       <SectionCard title={t.taskType} accent>
         <p className="text-xs text-gray-400 mb-3">{t.taskTypeHint}</p>
@@ -828,13 +880,23 @@ const CreateTaskModal = ({categories,onClose,onSave,defaultForm,onSetDefaultForm
 const CreateCategoryModal = ({onClose,onSave}) => {
   const t = useLang();
   const [name,setName] = useState("");
+  const [englishName,setEnglishName] = useState("");
+  const [lastAutoName,setLastAutoName] = useState("");
   const [taskIcon,setTaskIcon] = useState("");
   const [ei,setEi] = useState(false);
   const valid = name.trim();
+  const updateName = v => {
+    setName(v);
+    const auto = hasChinese(v) ? autoTranslate(v) : "";
+    if (!englishName || englishName === lastAutoName) { setEnglishName(auto); setLastAutoName(auto); }
+  };
   return (
     <ModalShell title={t.newCategory} onClose={onClose}
-      footer={<><Btn onClick={onClose} variant="default" size="md">{t.cancel}</Btn><button onClick={()=>{if(!valid)return;onSave({name,taskIcon,enabled:ei});onClose();}} disabled={!valid} className={`flex-1 py-2 rounded-xl text-sm font-bold transition ${valid?"bg-indigo-600 hover:bg-indigo-700 text-white":"opacity-40 cursor-not-allowed bg-gray-200 text-gray-400"}`}>{t.createCategoryBtn}</button></>}>
-      <SectionCard title={t.basicInfo}><Field label={t.taskName}><TextIn value={name} onChange={setName} ph={t.categoryNamePh}/></Field></SectionCard>
+      footer={<><Btn onClick={onClose} variant="default" size="md">{t.cancel}</Btn><button onClick={()=>{if(!valid)return;onSave({name,taskIcon,enabled:ei,nameEn:englishName.trim()||undefined});onClose();}} disabled={!valid} className={`flex-1 py-2 rounded-xl text-sm font-bold transition ${valid?"bg-indigo-600 hover:bg-indigo-700 text-white":"opacity-40 cursor-not-allowed bg-gray-200 text-gray-400"}`}>{t.createCategoryBtn}</button></>}>
+      <SectionCard title={t.basicInfo}>
+        <Field label={t.taskName}><TextIn value={name} onChange={updateName} ph={t.categoryNamePh}/></Field>
+        {(hasChinese(name) || englishName) && <Field mb="mb-3"><div className="flex items-center gap-3"><span className="text-xs text-gray-500 font-semibold">Translation (EN):</span><TextIn value={englishName} onChange={setEnglishName} ph="" size="sm" className="flex-1"/></div></Field>}
+      </SectionCard>
       <IconPickerField value={taskIcon} onChange={setTaskIcon}/>
       <SectionCard title={t.publishSettings}><Field label={t.enableImmediately} hint={t.enableImmediatelyDesc}><Toggle value={ei} onChange={setEi} labelOn={t.enableImmediately} labelOff={t.disableInitially}/></Field></SectionCard>
     </ModalShell>
@@ -937,6 +999,7 @@ const ReviewQueuePage = ({subs,allTasks,onUpdateSubs,onBack,initialTaskFilter=nu
   };
   const statusLbl = s => s==="pending"?t.pending:s==="approved"?t.approved:t.rejected;
   const subPillCol = s => s==="pending"?"bg-amber-50 text-amber-600 border border-amber-200":s==="approved"?"bg-emerald-50 text-emerald-700 border border-emerald-200":"bg-rose-50 text-rose-600 border border-rose-200";
+  const selectedItems = [...selectedIds].map(id=>allSubs.find(s=>s.id===id)).filter(Boolean);
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -947,9 +1010,34 @@ const ReviewQueuePage = ({subs,allTasks,onUpdateSubs,onBack,initialTaskFilter=nu
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={()=>setBatchActionOpen(false)}/>
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100"><p className="text-sm font-bold text-gray-900">{t.processBatch(selectedIds.size)}</p><p className="text-xs text-gray-400 mt-0.5">{t.batchProcessDesc}</p></div>
-            <div className="px-5 py-4 flex gap-2">
-              <button onClick={batchApprove} className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-bold transition">✓ {t.batchApproveAll}</button>
-              <button onClick={()=>{setBatchActionOpen(false);setBatchRejectMode(true);}} className="flex-1 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-sm font-bold transition">✗ {t.batchRejectAll}</button>
+            <div className="px-5 py-4 space-y-3">
+              {selectedItems.length>0 && (
+                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700">
+                  <p className="font-semibold text-gray-900 mb-2">Selected submissions</p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-gray-600">
+                      <thead>
+                        <tr>
+                          <th className="pb-2 pr-4 font-medium">User</th>
+                          <th className="pb-2 pr-4 font-medium">Task</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {selectedItems.map(item => (
+                          <tr key={item.id}>
+                            <td className="py-2 pr-4 truncate">{item.user}</td>
+                            <td className="py-2 pr-4 truncate">{getTaskName(item.taskId)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <button onClick={batchApprove} className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-bold transition">✓ {t.batchApproveAll}</button>
+                <button onClick={()=>{setBatchActionOpen(false);setBatchRejectMode(true);}} className="flex-1 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-sm font-bold transition">✗ {t.batchRejectAll}</button>
+              </div>
             </div>
             <div className="px-5 pb-4"><Btn onClick={()=>setBatchActionOpen(false)} variant="default" size="md">{t.cancel}</Btn></div>
           </div>
@@ -1018,17 +1106,12 @@ const ReviewQueuePage = ({subs,allTasks,onUpdateSubs,onBack,initialTaskFilter=nu
                   {[t.user,t.taskNameCol,t.status,t.submissionContent].map(h=>(
                     <th key={h} className="text-left px-5 py-3.5 text-xs font-bold uppercase tracking-widest text-gray-400">{h}</th>
                   ))}
-                  <th className="text-left px-5 py-3.5">
-                    <button onClick={()=>setSortDir(d=>d==="desc"?"asc":"desc")} className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-indigo-600 transition">
-                      {t.submissionTime} <span>{sortDir==="desc"?"↓":"↑"}</span>
-                    </button>
-                  </th>
                   {showReason&&<th className="text-left px-5 py-3.5 text-xs font-bold uppercase tracking-widest text-rose-400">{t.rejectionReason}</th>}
                   <th className="text-left px-5 py-3.5 text-xs font-bold uppercase tracking-widest text-gray-400">{t.actionsCol}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {shown.length===0&&<tr><td colSpan={7} className="text-center py-14 text-gray-300 text-sm">{t.noSubmissions}</td></tr>}
+                {shown.length===0&&<tr><td colSpan={5 + (batchMode?1:0) + (showReason?1:0)} className="text-center py-14 text-gray-300 text-sm">{t.noSubmissions}</td></tr>}
                 {shown.map(sub=>{
                   const ts = getTaskStatus(sub.taskId);
                   return (
@@ -1268,7 +1351,7 @@ export default function App() {
         </div>
         {showCreateCategory&&<CreateCategoryModal onClose={()=>setShowCreateCategory(false)} onSave={onCreateCategory}/>}
         {showCreateTask&&<CreateTaskModal categories={categories} onClose={()=>setShowCreateTask(false)} onSave={onCreateTask} defaultForm={defaultForm} onSetDefaultForm={setDefaultForm}/>}
-        {editCatCtx&&<EditCategoryDrawer category={editCatCtx} onClose={()=>setEditCatCtx(null)} onSave={upd=>{setCategories(p=>p.map(c=>c.id===upd.id?{...c,name:upd.name,taskIcon:upd.taskIcon}:c));setEditCatCtx(null);}}/>}
+        {editCatCtx&&<EditCategoryDrawer category={editCatCtx} onClose={()=>setEditCatCtx(null)} onSave={upd=>{setCategories(p=>p.map(c=>c.id===upd.id?{...c,name:upd.name,nameEn:upd.nameEn,taskIcon:upd.taskIcon}:c));setEditCatCtx(null);}}/>}
         {editCtx&&<EditTaskDrawer task={{...editCtx.task,_catId:editCtx.catId,_groupId:editCtx.groupId||"none"}} categories={categories} sharedFollowForm={sharedFollowForm} sharedCommentForm={sharedCommentForm} onClose={()=>setEditCtx(null)} onSave={u=>{onSaveTask(u);setEditCtx(null);}} onSaveForm={onSaveForm} defaultForm={defaultForm} onSetDefaultForm={setDefaultForm}/>}
         <div className="px-6 py-8 max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
