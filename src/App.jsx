@@ -1089,35 +1089,37 @@ const ReviewQueuePage = ({subs,allTasks,onUpdateSubs,onBack,initialTaskFilter=nu
       <div className="px-6 py-8 max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
           <h1 className="text-xl font-bold text-gray-900">{t.reviewQueue}</h1>
-          <div className="flex items-center gap-2">
-            <button onClick={()=>setShowReasonCrud(true)} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-600 transition">✏️ {t.manageRejectionReasons}</button>
-            <div className="flex gap-1 bg-white border border-gray-200 rounded-2xl p-1 shadow-sm">
-              {["all","pending","approved","rejected"].map(f=>(
-                <button key={f} onClick={()=>setFilterX(f)} className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${filter===f?"bg-indigo-600 text-white":"text-gray-400 hover:text-gray-700"}`}>
-                  {f==="all"?t.all:f==="pending"?t.pending:f==="approved"?t.approved:t.rejected} <span className="opacity-60">({counts[f]})</span>
-                </button>
-              ))}
-            </div>
+          <div className="flex gap-1 bg-white border border-gray-200 rounded-2xl p-1 shadow-sm">
+            {["all","pending","approved","rejected"].map(f=>(
+              <button key={f} onClick={()=>setFilterX(f)} className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${filter===f?"bg-indigo-600 text-white":"text-gray-400 hover:text-gray-700"}`}>
+                {f==="all"?t.all:f==="pending"?t.pending:f==="approved"?t.approved:t.rejected} <span className="opacity-60">({counts[f]})</span>
+              </button>
+            ))}
           </div>
         </div>
-        <div className="flex gap-2 mb-2 flex-wrap items-center">
-          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-500 font-medium">
-            <span>{t.filterByTask}:</span>
-            <select value={taskFilter} onChange={e=>setTaskFilter(e.target.value)} className="outline-none bg-transparent text-xs font-semibold text-gray-700">
-              <option value="all">{t.all}</option>
-              {tasksWithSubs.map(tk=><option key={tk.id} value={tk.id}>{tk.name}</option>)}
-            </select>
+        <div className="flex gap-2 mb-2 flex-wrap items-center justify-between">
+          <div className="flex gap-2 flex-wrap items-center">
+            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-500 font-medium">
+              <span>{t.filterByTask}:</span>
+              <select value={taskFilter} onChange={e=>setTaskFilter(e.target.value)} className="outline-none bg-transparent text-xs font-semibold text-gray-700 max-w-[100px]">
+                <option value="all">{t.all}</option>
+                {tasksWithSubs.map(tk=><option key={tk.id} value={tk.id}>{tk.name}</option>)}
+              </select>
+            </div>
+            <MultiStatusFilter value={taskStatusFilter} onChange={setTaskStatusFilter} label={t.filterByStatus}/>
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={t.searchUser} className="border border-gray-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-indigo-400 bg-white"/>
           </div>
-          <MultiStatusFilter value={taskStatusFilter} onChange={setTaskStatusFilter} label={t.filterByStatus}/>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={t.searchUser} className="border border-gray-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-indigo-400 bg-white"/>
-          {showBatch && (!batchMode ? (
-            <Btn onClick={()=>{setBatchMode(true);setSelectedIds(new Set());}} variant="default" size="sm">{t.batchOperation}</Btn>
-          ) : (
-            <>
-              <button onClick={()=>selectedIds.size>0&&setBatchActionOpen(true)} disabled={selectedIds.size===0} className={`px-3 py-1.5 rounded-xl text-xs font-bold transition border ${selectedIds.size>0?"bg-indigo-600 text-white border-indigo-600":"opacity-40 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200"}`}>{t.processBatch(selectedIds.size)}</button>
-              <Btn onClick={exitBatch} variant="default" size="sm">{t.cancel}</Btn>
-            </>
-          ))}
+          <div className="flex gap-2 flex-wrap items-center">
+            {showBatch && (!batchMode ? (
+              <Btn onClick={()=>{setBatchMode(true);setSelectedIds(new Set());}} variant="default" size="sm">{t.batchOperation}</Btn>
+            ) : (
+              <>
+                <button onClick={()=>selectedIds.size>0&&setBatchActionOpen(true)} disabled={selectedIds.size===0} className={`px-3 py-1.5 rounded-xl text-xs font-bold transition border ${selectedIds.size>0?"bg-indigo-600 text-white border-indigo-600":"opacity-40 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200"}`}>{t.processBatch(selectedIds.size)}</button>
+                <Btn onClick={exitBatch} variant="default" size="sm">{t.cancel}</Btn>
+              </>
+            ))}
+            <button onClick={()=>setShowReasonCrud(true)} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-600 transition">{t.manageRejectionReasons}</button>
+          </div>
         </div>
         {hasFilters && (
           <div className="flex items-center gap-1.5 text-xs text-indigo-600 font-medium bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2 mb-3 w-fit">
