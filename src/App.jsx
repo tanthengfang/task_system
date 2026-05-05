@@ -576,7 +576,7 @@ const FormPreview = ({form,lang}) => {
 const FormBuilder = ({form,setForm,defaultForm,onSetDefault,onUseDefault,disableAddQuestion=false}) => {
   const t = useLang();
   const lang = useContext(LangCtx);
-  const [el,setEl] = useState("en");
+  const [el,setEl] = useState("zh");
   const [showAddQ,setShowAddQ] = useState(false);
   const [showPreview,setShowPreview] = useState(false);
   const [previewLang,setPreviewLang] = useState("en");
@@ -630,10 +630,7 @@ const FormBuilder = ({form,setForm,defaultForm,onSetDefault,onUseDefault,disable
       )}
       <div className="flex items-center justify-between gap-1.5 flex-nowrap">
         <div className="flex items-center gap-1.5 shrink-0">
-          <div className="flex border border-gray-200 rounded-xl overflow-hidden">
-            {["en","zh"].map(l=><button key={l} onClick={()=>setEl(l)} className={`px-2.5 py-1.5 text-xs font-bold transition ${el===l?"bg-indigo-600 text-white":"bg-white text-gray-500 hover:bg-gray-50"}`}>{l==="en"?"🇬🇧 EN":"🇨🇳 ZH"}</button>)}
-          </div>
-          <button onClick={()=>{setPreviewLang(el);setShowPreview(true);}} className="px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-600 transition whitespace-nowrap">👁 {t.preview}</button>
+          <button onClick={()=>{setPreviewLang("en");setShowPreview(true);}} className="px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-600 transition whitespace-nowrap">👁 {t.preview}</button>
         </div>
         <div className="flex gap-1 shrink-0">
           {!disableAddQuestion && <>
@@ -643,8 +640,10 @@ const FormBuilder = ({form,setForm,defaultForm,onSetDefault,onUseDefault,disable
         </div>
       </div>
       <SectionCard title={t.formBanner} accent>
-        <Field label="Title" mb="mb-2"><TextIn value={L(form.banner.title)} onChange={v=>setBannerTxt("title",v)} ph="Form title..."/></Field>
-        <Field label={t.description} mb="mb-0"><TextIn value={L(form.banner.description)} onChange={v=>setBannerTxt("description",v)} multiline rows={2} ph="Form description..."/></Field>
+        <Field label="中文 Title" mb="mb-0"><TextIn value={form.banner.title?.zh||""} onChange={v=>setForm(p=>({...p,banner:{...p.banner,title:{...p.banner.title,zh:v}}}))} ph="Chinese banner title..."/></Field>
+        {form.banner.title?.en && <div className="flex mt-1 items-start gap-3 mb-2"><span className="text-xs text-gray-500 font-semibold">EN:</span><input value={form.banner.title?.en||""} onChange={v=>setForm(p=>({...p,banner:{...p.banner,title:{...p.banner.title,en:v}}}))} placeholder="English title..." className="flex-1 text-sm outline-none items-center focus:text-indigo-600 bg-transparent"/></div>}
+        <Field label="中文 Description" mb="mb-0"><TextIn value={form.banner.description?.zh||""} onChange={v=>setForm(p=>({...p,banner:{...p.banner,description:{...p.banner.description,zh:v}}}))} multiline rows={2} ph="Chinese banner description..."/></Field>
+        {form.banner.description?.en && <div className="flex mt-1 items-start gap-3"><span className="text-xs text-gray-500 font-semibold">EN:</span><textarea value={form.banner.description?.en||""} onChange={v=>setForm(p=>({...p,banner:{...p.banner,description:{...p.banner.description,en:v}}}))} placeholder="English description..." rows={2} className="flex-1 text-sm outline-none focus:text-indigo-600 bg-transparent resize-none"/></div>}
       </SectionCard>
       {form.questions.map((q,idx)=>{
         const mandatory = isMandatory(idx);
@@ -665,9 +664,11 @@ const FormBuilder = ({form,setForm,defaultForm,onSetDefault,onUseDefault,disable
               {!disableAddQuestion && !mandatory&&<button onClick={()=>delQ(q.id)} className="text-gray-300 hover:text-rose-400 text-xl leading-none">×</button>}
             </div>
             <div className="px-4 py-3 space-y-2.5">
-              <Field label={t.questionLbl} mb="mb-0"><TextIn value={L(q.question)} onChange={v=>updQTxt(q.id,"question",v)} ph="Question text..."/></Field>
-              <Field label={t.questionDescLbl} mb="mb-0"><TextIn value={L(q.description)} onChange={v=>updQTxt(q.id,"description",v)} multiline rows={2} ph="Help text (optional)..."/></Field>
-              {q.type==="shortAnswer"&&<Field label={t.placeholder} mb="mb-0"><TextIn value={L(q.placeholder)} onChange={v=>updQTxt(q.id,"placeholder",v)} ph="Input placeholder..."/></Field>}
+              <Field label={t.questionLbl} mb="mb-0"><TextIn value={q.question?.zh||""} onChange={v=>setForm(p=>({...p,questions:p.questions.map(qx=>qx.id!==q.id?qx:{...qx,question:{...qx.question,zh:v}})}))} ph="Chinese question..."/></Field>
+              {q.question?.en && <div className="flex items-center gap-3 ml-0"><span className="text-xs text-gray-500 font-semibold">EN:</span><input value={q.question?.en||""} onChange={v=>setForm(p=>({...p,questions:p.questions.map(qx=>qx.id!==q.id?qx:{...qx,question:{...qx.question,en:v}})}))} placeholder="English translation..." className="flex-1 text-xs outline-none focus:text-indigo-600 bg-transparent"/></div>}
+              <Field label={t.questionDescLbl} mb="mb-0"><TextIn value={q.description?.zh||""} onChange={v=>setForm(p=>({...p,questions:p.questions.map(qx=>qx.id!==q.id?qx:{...qx,description:{...qx.description,zh:v}})}))} multiline rows={2} ph="Chinese help text..."/></Field>
+              {q.description?.en && <div className="flex items-start gap-3 ml-0"><span className="text-xs text-gray-500 font-semibold">EN:</span><textarea value={q.description?.en||""} onChange={v=>setForm(p=>({...p,questions:p.questions.map(qx=>qx.id!==q.id?qx:{...qx,description:{...qx.description,en:v}})}))} placeholder="English translation..." rows={2} className="flex-1 text-xs outline-none focus:text-indigo-600 bg-transparent resize-none"/></div>}
+              {q.type==="shortAnswer"&&<><Field label={t.placeholder} mb="mb-0"><TextIn value={q.placeholder?.zh||""} onChange={v=>setForm(p=>({...p,questions:p.questions.map(qx=>qx.id!==q.id?qx:{...qx,placeholder:{...qx.placeholder,zh:v}})}))} ph="Chinese placeholder..."/></Field>{q.placeholder?.en && <div className="flex items-center gap-3 ml-0"><span className="text-xs text-gray-500 font-semibold">EN:</span><input value={q.placeholder?.en||""} onChange={v=>setForm(p=>({...p,questions:p.questions.map(qx=>qx.id!==q.id?qx:{...qx,placeholder:{...qx.placeholder,en:v}})}))} placeholder="English translation..." className="flex-1 text-xs outline-none focus:text-indigo-600 bg-transparent"/></div>}</> }
               {mandatory&&<div className="bg-amber-50 rounded-xl border border-amber-100 px-3 py-2.5"><p className="text-xs text-amber-600 italic">This Terms &amp; Conditions checkbox is mandatory and always the last question. It cannot be removed.</p></div>}
             </div>
           </div>
