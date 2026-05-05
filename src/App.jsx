@@ -142,7 +142,8 @@ const INIT_FOLLOW_FORM = {
 const INIT_COMMENT_FORM = {
   banner:{ title:{en:"Submit Your Comment Proof",zh:"提交评论证明"}, description:{en:"Complete the form to earn your credits.",zh:"完成以下表单即可获得积分奖励。"} },
   questions:[
-    mkQ("cq1","shortAnswer","Comment URL","评论链接","Find your comment on X → tap Share → Copy Link.","在 X 上找到您的评论 → 点击分享 → 复制链接。",{placeholder:{en:"https://x.com/...",zh:"https://x.com/..."}}),
+    mkQ("cq0","shortAnswer","Your Username","您的用户名","Enter your social media username (e.g. @yourname).","请输入您的社交媒体用户名（如 @yourname）。",{placeholder:{en:"@yourname",zh:"@yourname"}}),
+    mkQ("cq1","shortAnswer","Post URL","帖子链接","Find your post on X → tap Share → Copy Link.","在 X 上找到您的帖子 → 点击分享 → 复制链接。",{placeholder:{en:"https://x.com/...",zh:"https://x.com/..."}}),
     mkQ("cq2","fileUpload","Screenshot(s)","截图","Upload a screenshot showing your comment. Max 5 images.","上传显示您评论的截图，最多5张。"),
     mkQ("cq3","checkbox","Terms & Conditions","条款与条件","Please read and agree to the terms.","请阅读并同意以下条款。")
   ]
@@ -548,7 +549,7 @@ const FormPreview = ({form,lang}) => {
 };
 
 // ── FormBuilder ────────────────────────────────────────────────────────────────
-const FormBuilder = ({form,setForm,defaultForm,onSetDefault,onUseDefault}) => {
+const FormBuilder = ({form,setForm,defaultForm,onSetDefault,onUseDefault,disableAddQuestion=false}) => {
   const t = useLang();
   const lang = useContext(LangCtx);
   const [el,setEl] = useState("en");
@@ -611,8 +612,10 @@ const FormBuilder = ({form,setForm,defaultForm,onSetDefault,onUseDefault}) => {
           <button onClick={()=>{setPreviewLang(el);setShowPreview(true);}} className="px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-600 transition whitespace-nowrap">👁 {t.preview}</button>
         </div>
         <div className="flex gap-1 shrink-0">
-          <button disabled={!defaultForm} onClick={onUseDefault} className={`px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-600 transition whitespace-nowrap ${!defaultForm?"opacity-40 cursor-not-allowed":"hover:bg-gray-50"}`}>📋 {t.useDefault}</button>
-          <button onClick={onSetDefault} className="px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-600 transition whitespace-nowrap">⭐ {t.setAsDefault}</button>
+          {!disableAddQuestion && <>
+            <button disabled={!defaultForm} onClick={onUseDefault} className={`px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-600 transition whitespace-nowrap ${!defaultForm?"opacity-40 cursor-not-allowed":"hover:bg-gray-50"}`}>📋 {t.useDefault}</button>
+            <button onClick={onSetDefault} className="px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-600 transition whitespace-nowrap">⭐ {t.setAsDefault}</button>
+          </>}
         </div>
       </div>
       <SectionCard title={t.formBanner} accent>
@@ -625,7 +628,7 @@ const FormBuilder = ({form,setForm,defaultForm,onSetDefault,onUseDefault}) => {
           <div key={q.id} className={`rounded-2xl border shadow-sm overflow-hidden ${mandatory?"bg-amber-50/30 border-amber-200":"bg-white border-gray-100"}`}>
             <div className={`px-4 py-2 border-b flex items-center justify-between ${mandatory?"border-amber-100 bg-amber-50/60":"border-gray-100 bg-gray-50/80"}`}>
               <div className="flex items-center gap-2">
-                {!mandatory && (
+                {!disableAddQuestion && !mandatory && (
                   <div className="flex flex-col gap-0.5">
                     <button onClick={()=>reorderQ(idx,-1)} disabled={idx===0} className={`w-4 h-4 flex items-center justify-center text-gray-300 hover:text-indigo-500 text-[10px] ${idx===0?"opacity-20 cursor-not-allowed":""}`}>▲</button>
                     <button onClick={()=>reorderQ(idx,1)} disabled={idx===effMax} className={`w-4 h-4 flex items-center justify-center text-gray-300 hover:text-indigo-500 text-[10px] ${idx===effMax?"opacity-20 cursor-not-allowed":""}`}>▼</button>
@@ -635,7 +638,7 @@ const FormBuilder = ({form,setForm,defaultForm,onSetDefault,onUseDefault}) => {
                 <span className={`text-xs rounded-full px-2 py-0.5 font-semibold border ${mandatory?"bg-emerald-50 text-emerald-600 border-emerald-100":qTypeCol(q.type)}`}>{mandatory?"Checkbox":qTypeLbl(q.type)}</span>
                 {mandatory&&<span className="text-xs bg-amber-100 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5 font-semibold">🔒 Mandatory</span>}
               </div>
-              {!mandatory&&<button onClick={()=>delQ(q.id)} className="text-gray-300 hover:text-rose-400 text-xl leading-none">×</button>}
+              {!disableAddQuestion && !mandatory&&<button onClick={()=>delQ(q.id)} className="text-gray-300 hover:text-rose-400 text-xl leading-none">×</button>}
             </div>
             <div className="px-4 py-3 space-y-2.5">
               <Field label={t.questionLbl} mb="mb-0"><TextIn value={L(q.question)} onChange={v=>updQTxt(q.id,"question",v)} ph="Question text..."/></Field>
@@ -646,9 +649,10 @@ const FormBuilder = ({form,setForm,defaultForm,onSetDefault,onUseDefault}) => {
           </div>
         );
       })}
-      {!showAddQ ? (
+      {!disableAddQuestion && !showAddQ && (
         <button onClick={()=>setShowAddQ(true)} className="w-full py-3 border-2 border-dashed border-indigo-200 rounded-xl text-indigo-500 text-sm font-semibold hover:border-indigo-400 hover:bg-indigo-50/30 transition">{t.addQuestion}</button>
-      ) : (
+      )}
+      {!disableAddQuestion && showAddQ && (
         <div className="bg-white rounded-2xl border border-indigo-200 shadow-sm p-3 space-y-2">
           <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">{t.selectQType}</p>
           <div className="grid grid-cols-2 gap-2">
@@ -767,7 +771,8 @@ const EditTaskDrawer = ({task,categories,sharedFollowForm,sharedCommentForm,onCl
       {showTabs&&activeTab==="form" && (
         <FormBuilder form={localForm} setForm={dForm} defaultForm={defaultForm}
           onSetDefault={()=>onSetDefaultForm(JSON.parse(JSON.stringify(localForm)))}
-          onUseDefault={()=>{setLocalForm(JSON.parse(JSON.stringify(defaultForm)));setDirty(true);}}/>
+          onUseDefault={()=>{setLocalForm(JSON.parse(JSON.stringify(defaultForm)));setDirty(true);}}
+          disableAddQuestion={task.type==="follow"||task.type==="comment"}/>
       )}
     </DrawerShell>
   );
@@ -821,7 +826,8 @@ const CreateTaskModal = ({categories,onClose,onSave,defaultForm,onSetDefaultForm
         footer={<><Btn onClick={()=>setStep("task")} variant="default" size="md">← Back</Btn><button onClick={()=>{setFormSaved(true);setStep("task");}} className="flex-1 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold transition">{t.saveForm}</button></>}>
         <FormBuilder form={localForm} setForm={setLocalForm} defaultForm={defaultForm}
           onSetDefault={()=>onSetDefaultForm(JSON.parse(JSON.stringify(localForm)))}
-          onUseDefault={()=>setLocalForm(JSON.parse(JSON.stringify(defaultForm)))}/>
+          onUseDefault={()=>setLocalForm(JSON.parse(JSON.stringify(defaultForm)))}
+          disableAddQuestion={taskType==="follow"||taskType==="comment"}/>
       </ModalShell>
     );
   }
