@@ -400,8 +400,23 @@ const RejectionReasonCrudModal = ({reasons,onChange,onClose}) => {
   const t = useLang();
   const [local,setLocal] = useState([...reasons]);
   const [newVal,setNewVal] = useState("");
+  const [englishNew,setEnglishNew] = useState("");
+  const [lastAutoNew,setLastAutoNew] = useState("");
+  const exampleEn = ["Link is inaccessible", "Duplicate submission", "Does not meet requirements"][Math.floor(Math.random()*3)];
+  const updateNewVal = v => {
+    setNewVal(v);
+    const auto = hasChinese(v) ? autoTranslate(v) : "";
+    if (!englishNew || englishNew === lastAutoNew) { setEnglishNew(auto); setLastAutoNew(auto); }
+  };
+  const addReason = () => { 
+    const val = englishNew.trim() || newVal.trim();
+    if (!val) return; 
+    setLocal(p=>[...p,val]); 
+    setNewVal(""); 
+    setEnglishNew(""); 
+    setLastAutoNew("");
+  };
   const deleteReason = idx => setLocal(p=>p.filter((_,i)=>i!==idx));
-  const addReason = () => { if (!newVal.trim()) return; setLocal(p=>[...p,newVal.trim()]); setNewVal(""); };
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose}/>
@@ -419,11 +434,20 @@ const RejectionReasonCrudModal = ({reasons,onChange,onClose}) => {
           ))}
         </div>
         <div className="px-6 py-4 border-t border-gray-100 shrink-0 space-y-3">
-          <div className="flex gap-2">
-            <input value={newVal} onChange={e=>setNewVal(e.target.value)} placeholder={t.reasonPh}
-              onKeyDown={e=>{if(e.key==="Enter")addReason();}}
-              className="flex-1 border border-gray-200 rounded-xl px-3.5 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"/>
-            <Btn onClick={addReason} variant="primary" size="sm">{t.addReason}</Btn>
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <input value={newVal} onChange={e=>updateNewVal(e.target.value)} placeholder={t.reasonPh}
+                onKeyDown={e=>{if(e.key==="Enter")addReason();}}
+                className="flex-1 border border-gray-200 rounded-xl px-3.5 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"/>
+              <Btn onClick={addReason} variant="primary" size="sm">{t.addReason}</Btn>
+            </div>
+            {(hasChinese(newVal) || englishNew) && (
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-gray-500 font-semibold">EN:</span>
+                <input value={englishNew} onChange={e=>setEnglishNew(e.target.value)} placeholder={exampleEn}
+                  className="flex-1 border border-gray-200 rounded-xl px-3 py-1.5 text-xs outline-none focus:border-indigo-400"/>
+              </div>
+            )}
           </div>
           <div className="flex gap-2">
             <Btn onClick={onClose} variant="default" size="md">{t.cancel}</Btn>
