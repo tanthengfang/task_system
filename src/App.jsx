@@ -628,7 +628,7 @@ const FormBuilder = ({form,setForm,defaultForm,onSetDefault,onUseDefault,disable
           </div>
         </div>
       )}
-      <div className="flex items-center justify-between gap-1.5 flex-nowrap">
+      <div className="flex items-center justify-ends gap-1.5 flex-nowrap">
         <div className="flex items-center gap-1.5 shrink-0">
           <button onClick={()=>{setPreviewLang("en");setShowPreview(true);}} className="px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-600 transition whitespace-nowrap">👁 {t.preview}</button>
         </div>
@@ -724,9 +724,7 @@ const EditTaskDrawer = ({task,categories,sharedFollowForm,sharedCommentForm,onCl
   const t = useLang();
   const lang = useContext(LangCtx);
   const isSpecial = NO_URL_TASK_IDS.has(task.id);
-  const showTabs = !isSpecial;
   const cfg = TASK_TYPE_CONFIG[task.type]||{};
-  const [activeTab,setActiveTab] = useState("info");
   const [dirty,setDirty] = useState(false);
   const [name,setName] = useState(task.name||"");
   const [englishName,setEnglishName] = useState(task.nameEn||"");
@@ -740,35 +738,21 @@ const EditTaskDrawer = ({task,categories,sharedFollowForm,sharedCommentForm,onCl
   const [helpTooltip,setHelpTooltip] = useState(task.helpTooltip||"");
   const [taskImage,setTaskImage] = useState(task.taskImage||null);
   const [templates,setTemplates] = useState(task.templates?JSON.parse(JSON.stringify(task.templates)):JSON.parse(JSON.stringify(INIT_COMMENT_TEMPLATES)));
-  const isFollow = task.type==="follow";
-  const [localForm,setLocalForm] = useState(()=>isFollow?JSON.parse(JSON.stringify(sharedFollowForm)):JSON.parse(JSON.stringify(sharedCommentForm)));
   const d = setter => v => { setter(v); setDirty(true); };
   const updateName = v => { setName(v); setDirty(true); const auto = hasChinese(v) ? autoTranslate(v) : ""; if (!englishName || englishName === lastAutoName) { setEnglishName(auto); setLastAutoName(auto); } };
   const updateDesc = v => { setDesc(v); setDirty(true); const auto = hasChinese(v) ? autoTranslate(v) : ""; if (!englishDesc || englishDesc === lastAutoDesc) { setEnglishDesc(auto); setLastAutoDesc(auto); } };
-  const dForm = f => { setLocalForm(f); setDirty(true); };
   const showUrlField = cfg.hasUrl&&!isSpecial;
-  const imageHint = isFollow?t.taskImageHintFollow:t.taskImageHintComment;
+  const imageHint = task.type==="follow"?t.taskImageHintFollow:t.taskImageHintComment;
   const save = () => {
     const newGroupId = catId===task._catId?(task._groupId||"none"):"none";
     onSave({...task,name,nameEn:englishName.trim()||undefined,desc,descEn:englishDesc.trim()||undefined,reward,url:showUrlField?url:task.url,helpTooltip,taskImage:isSpecial?null:taskImage,templates:task.type==="comment"?templates:null,_newCatId:catId,_newGroupId:newGroupId});
-    if (showTabs&&cfg.hasForm&&onSaveForm) onSaveForm(isFollow?"follow":"comment",localForm);
     onClose();
   };
   const saveBtnCls = dirty?"bg-amber-500 text-white hover:bg-amber-600 border border-amber-500":"bg-indigo-600 text-white hover:bg-indigo-700 border border-indigo-600";
-  const tabBar = showTabs ? (
-    <div className="flex">
-      {[["info",t.tabTaskInfo],["form",t.tabReviewForm]].map(([key,label])=>(
-        <button key={key} onClick={()=>setActiveTab(key)} className={`flex-1 px-4 py-3 text-xs font-bold border-b-2 transition relative ${activeTab===key?"border-indigo-500 text-indigo-600 bg-white":"border-transparent text-gray-400 hover:text-gray-600 bg-gray-50"}`}>
-          {label}{key==="form"&&dirty&&activeTab!=="form"&&<span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-amber-400"/>}
-        </button>
-      ))}
-    </div>
-  ) : null;
   return (
-    <DrawerShell title={task.name||""} subtitle={`${t.editTask} · ${TYPE_LABELS[lang][task.type]||task.type}`} onClose={onClose} tabBar={tabBar}
+    <DrawerShell title={task.name||""} subtitle={`${t.editTask} · ${TYPE_LABELS[lang][task.type]||task.type}`} onClose={onClose}
       footer={<><Btn onClick={onClose} variant="default" size="md">{t.cancel}</Btn><button onClick={save} className={`flex-1 py-2.5 rounded-2xl text-sm font-bold transition ${saveBtnCls}`}>{dirty&&<span className="mr-1.5 opacity-70">●</span>}{t.saveChanges}</button></>}>
-      {(!showTabs||activeTab==="info") && (
-        <>
+      <>
           <SectionCard title={t.basicInfo}>
             <Field label={t.category} hint={t.categoryHint}><SelectIn value={catId} onChange={d(setCatId)}>{categories.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</SelectIn></Field>
             <Field label={t.taskName}><TextIn value={name} onChange={updateName} ph={t.taskNamePh}/></Field>
@@ -791,14 +775,7 @@ const EditTaskDrawer = ({task,categories,sharedFollowForm,sharedCommentForm,onCl
           {showUrlField && <SectionCard title={t.targetUrl}><Field label={t.targetUrlLabel(name)} hint={t.targetUrlHint}><TextIn value={url} onChange={d(setUrl)} ph="https://..."/></Field></SectionCard>}
           {!isSpecial && <ImageUploadField value={taskImage} onChange={v=>{setTaskImage(v);setDirty(true);}} label={t.taskImage} hint={imageHint}/>}
           {task.type==="comment" && <CommentTemplatesEditor templates={templates} setTemplates={setTemplates} onDirty={()=>setDirty(true)}/>}
-        </>
-      )}
-      {showTabs&&activeTab==="form" && (
-        <FormBuilder form={localForm} setForm={dForm} defaultForm={defaultForm}
-          onSetDefault={()=>onSetDefaultForm(JSON.parse(JSON.stringify(localForm)))}
-          onUseDefault={()=>{setLocalForm(JSON.parse(JSON.stringify(defaultForm)));setDirty(true);}}
-          disableAddQuestion={task.type==="follow"||task.type==="comment"}/>
-      )}
+      </>
     </DrawerShell>
   );
 };
@@ -931,6 +908,50 @@ const CreateCategoryModal = ({onClose,onSave}) => {
       <IconPickerField value={taskIcon} onChange={setTaskIcon}/>
       <SectionCard title={t.publishSettings}><Field label={t.enableImmediately} hint={t.enableImmediatelyDesc}><Toggle value={ei} onChange={setEi} labelOn={t.enableImmediately} labelOff={t.disableInitially}/></Field></SectionCard>
     </ModalShell>
+  );
+};
+
+// ── ReviewFormManagerModal ────────────────────────────────────────────────────
+const ReviewFormManagerModal = ({onClose,sharedFollowForm,setSharedFollowForm,sharedCommentForm,setSharedCommentForm,defaultForm,onSetDefaultForm}) => {
+  const t = useLang();
+  const [formType,setFormType] = useState("follow");
+  const [showPreview,setShowPreview] = useState(false);
+  const [previewLang,setPreviewLang] = useState("en");
+  const currentForm = formType==="follow" ? sharedFollowForm : sharedCommentForm;
+  const setCurrentForm = formType==="follow" ? setSharedFollowForm : setSharedCommentForm;
+  return (
+    <>
+      {showPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={()=>setShowPreview(false)}/>
+          <div className="relative bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col" style={{maxHeight:"90vh"}}>
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 bg-white shrink-0">
+              <p className="text-sm font-bold text-gray-900">{t.preview}</p>
+              <div className="flex items-center gap-2">
+                <div className="flex border border-gray-200 rounded-xl overflow-hidden">
+                  {["en","zh"].map(l=><button key={l} onClick={()=>setPreviewLang(l)} className={`px-3 py-1 text-xs font-bold transition ${previewLang===l?"bg-indigo-600 text-white":"bg-white text-gray-500 hover:bg-gray-50"}`}>{l==="en"?"🇬🇧 EN":"🇨🇳 ZH"}</button>)}
+                </div>
+                <button onClick={()=>setShowPreview(false)} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full text-lg leading-none ml-1">×</button>
+              </div>
+            </div>
+            <div className="overflow-y-auto px-6 py-5"><FormPreview form={currentForm} lang={previewLang}/></div>
+          </div>
+        </div>
+      )}
+      <ModalShell title={t.editReviewForm} onClose={onClose}>
+        <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+          <div className="flex gap-2 rounded-xl bg-gray-100 p-1 w-fit">
+            {[["follow","Follow"],["comment","Comment"]].map(([type,label])=>(
+              <button key={type} onClick={()=>setFormType(type)} className={`px-4 py-2 rounded-lg text-xs font-bold transition ${formType===type?"bg-white text-indigo-600 shadow-sm":"text-gray-600 hover:text-gray-900"}`}>{label}</button>
+            ))}
+          </div>
+          
+        </div>
+        <FormBuilder form={currentForm} setForm={setCurrentForm} defaultForm={defaultForm}
+          onSetDefault={()=>onSetDefaultForm(JSON.parse(JSON.stringify(currentForm)))}
+          onUseDefault={()=>{setCurrentForm(JSON.parse(JSON.stringify(defaultForm)));}} disableAddQuestion={true}/>
+      </ModalShell>
+    </>
   );
 };
 
@@ -1318,6 +1339,7 @@ export default function App() {
   const [editCatCtx,setEditCatCtx] = useState(null);
   const [showCreateTask,setShowCreateTask] = useState(false);
   const [showCreateCategory,setShowCreateCategory] = useState(false);
+  const [showReviewForm,setShowReviewForm] = useState(false);
   const [defaultForm,setDefaultForm] = useState(null);
 
   const allActiveTasks = categories.flatMap(c=>[
@@ -1383,6 +1405,7 @@ export default function App() {
           <LangToggle lang={lang} setLang={setLang}/>
         </div>
         {showCreateCategory&&<CreateCategoryModal onClose={()=>setShowCreateCategory(false)} onSave={onCreateCategory}/>}
+        {showReviewForm&&<ReviewFormManagerModal onClose={()=>setShowReviewForm(false)} sharedFollowForm={sharedFollowForm} setSharedFollowForm={setSharedFollowForm} sharedCommentForm={sharedCommentForm} setSharedCommentForm={setSharedCommentForm} defaultForm={defaultForm} onSetDefaultForm={setDefaultForm}/>}
         {showCreateTask&&<CreateTaskModal categories={categories} onClose={()=>setShowCreateTask(false)} onSave={onCreateTask} defaultForm={defaultForm} onSetDefaultForm={setDefaultForm}/>}
         {editCatCtx&&<EditCategoryDrawer category={editCatCtx} onClose={()=>setEditCatCtx(null)} onSave={upd=>{setCategories(p=>p.map(c=>c.id===upd.id?{...c,name:upd.name,nameEn:upd.nameEn,taskIcon:upd.taskIcon}:c));setEditCatCtx(null);}}/>}
         {editCtx&&<EditTaskDrawer task={{...editCtx.task,_catId:editCtx.catId,_groupId:editCtx.groupId||"none"}} categories={categories} sharedFollowForm={sharedFollowForm} sharedCommentForm={sharedCommentForm} onClose={()=>setEditCtx(null)} onSave={u=>{onSaveTask(u);setEditCtx(null);}} onSaveForm={onSaveForm} defaultForm={defaultForm} onSetDefaultForm={setDefaultForm}/>}
@@ -1393,6 +1416,7 @@ export default function App() {
               <MultiStatusFilter value={statusFilter} onChange={setStatusFilter} label={t.filterByStatus}/>
               <div className="w-px h-6 bg-gray-200"/>
               <button onClick={()=>setShowCreateCategory(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition">{t.createCategory}</button>
+              <button onClick={()=>setShowReviewForm(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition">{t.editReviewForm}</button>
               <button onClick={()=>setShowCreateTask(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition">{t.createTask}</button>
               <button onClick={()=>goQueue(null)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-50 border border-violet-200 text-violet-700 text-sm font-semibold hover:bg-violet-100 transition">
                 {t.manageSubmissions}{pendingCount>0&&<span className="bg-amber-500 text-white text-xs font-bold rounded-full px-2 py-0.5">{pendingCount}</span>}
