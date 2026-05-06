@@ -143,7 +143,7 @@ const INIT_COMMENT_FORM = {
   banner:{ title:{en:"Submit Your Comment Proof",zh:"提交评论证明"}, description:{en:"Complete the form to earn your credits.",zh:"完成以下表单即可获得积分奖励。"} },
   questions:[
     mkQ("cq0","shortAnswer","Your Username","您的用户名","Enter your social media username (e.g. @yourname).","请输入您的社交媒体用户名（如 @yourname）。",{placeholder:{en:"@yourname",zh:"@yourname"}}),
-    mkQ("cq1","shortAnswer","Post URL","帖子链接","Find your post on X → tap Share → Copy Link.","在 X 上找到您的帖子 → 点击分享 → 复制链接。",{placeholder:{en:"https://x.com/...",zh:"https://x.com/..."}}),
+    mkQ("cq1","shortAnswer","Post/Comment URL","帖子/留言链接","Find your post/comment on X → tap Share → Copy Link.","在 X 上找到您的帖子/留言 → 点击分享 → 复制链接。",{placeholder:{en:"https://x.com/...",zh:"https://x.com/..."}}),
     mkQ("cq2","fileUpload","Screenshot(s)","截图","Upload a screenshot showing your comment. Max 5 images.","上传显示您评论的截图，最多5张。"),
     mkQ("cq3","checkbox","Terms & Conditions","条款与条件","Please read and agree to the terms.","请阅读并同意以下条款。")
   ]
