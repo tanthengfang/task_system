@@ -5,7 +5,9 @@ const T = {
     adminPanel:"Admin Panel", taskCentre:"Task Centre", manageDesc:"Manage categories, tasks, rewards, and review forms.",
     task:"Task", reward:"Reward", actions:"Actions", disabled:"Disabled", enabled:"Enabled",
     pending:"Pending", approved:"Approved", rejected:"Rejected",
-    edit:"Edit", enable:"Enable", disable:"Disable", viewSubmissions:"View Submissions",
+    edit:"Edit", enable:"Enable", disable:"Disable", delete:"Delete", viewSubmissions:"View Submissions",
+    deleteTaskTitle:(l)=>`Delete "${l}"?`, deleteTaskNote:"This will permanently remove the task and all its submissions.",
+    deleteCatTitle:(l)=>`Delete "${l}"?`, deleteCatNote:"This will permanently remove the category and all tasks inside it.",
     back:"← Back", editTask:"Edit Task", basicInfo:"Basic Info",
     taskName:"Task Name", description:"Description", category:"Category",
     categoryHint:"Which category does this task belong to?", taskNamePh:"Task name",
@@ -31,7 +33,7 @@ const T = {
     searchUser:"Search user...", createTask:"+ Create Task", createCategory:"+ Create Category",
     newTask:"New Task", newCategory:"New Category", taskType:"Task Type",
     taskTypeHint:"Choose the type of task to create.", createTaskBtn:"Create Task",
-    createCategoryBtn:"Create Category", categoryNamePh:"e.g. Interact with us on X!",
+    createCategoryBtn:"Create Category", categoryName:"Category Name", categoryNamePh:"e.g. Interact with us on X!",
     taskImage:"Task Image", taskImageHintFollow:"The instructional image shown in the Follow Task Guide Page.",
     taskImageHintComment:"The preview image of the target post shown on the Task Guide page for reference.",
     englishTranslation:"English translation", englishName:"English Name", englishDescription:"English Description", englishPlaceholder:"Type English translation...", englishTranslationHint:"Enter the English translation when Chinese is entered.",
@@ -59,7 +61,9 @@ const T = {
     adminPanel:"管理后台", taskCentre:"任务中心", manageDesc:"管理分类、任务、奖励及审核表单。",
     task:"任务", reward:"奖励", actions:"操作", disabled:"已禁用", enabled:"启用",
     pending:"待审核", approved:"已通过", rejected:"已拒绝",
-    edit:"编辑", enable:"启用", disable:"禁用", viewSubmissions:"查看提交",
+    edit:"编辑", enable:"启用", disable:"禁用", delete:"删除", viewSubmissions:"查看提交",
+    deleteTaskTitle:(l)=>`删除"${l}"？`, deleteTaskNote:"此操作将永久删除该任务及其所有提交记录。",
+    deleteCatTitle:(l)=>`删除"${l}"？`, deleteCatNote:"此操作将永久删除该分类及其所有任务。",
     back:"← 返回", editTask:"编辑任务", basicInfo:"基本信息",
     taskName:"任务名称", description:"任务描述", category:"所属分类",
     categoryHint:"此任务属于哪个分类？", taskNamePh:"任务名称",
@@ -85,7 +89,7 @@ const T = {
     searchUser:"搜索用户……", createTask:"+ 创建任务", createCategory:"+ 创建分类",
     newTask:"新建任务", newCategory:"新建分类", taskType:"任务类型",
     taskTypeHint:"选择要创建的任务类型。", createTaskBtn:"创建任务",
-    createCategoryBtn:"创建分类", categoryNamePh:"例：在 X 上与我们互动！",
+    createCategoryBtn:"创建分类", categoryName:"分类名称", categoryNamePh:"例：在 X 上与我们互动！",
     taskImage:"任务图片", taskImageHintFollow:"在关注任务指南页面中显示的教学图片。",
     taskImageHintComment:"目标帖子的预览图片，显示在任务指南页面供参考。",
     englishTranslation:"英文翻译", englishName:"英文名称", englishDescription:"英文描述", englishPlaceholder:"输入英文翻译...", englishTranslationHint:"当输入中文时，填写英文翻译。",
@@ -711,7 +715,7 @@ const EditCategoryDrawer = ({category,onClose,onSave}) => {
     <DrawerShell title={name||t.editGroupTitle} subtitle={t.editGroupTitle} onClose={onClose}
       footer={<><Btn onClick={onClose} variant="default" size="md">{t.cancel}</Btn><button onClick={()=>{onSave({...category,name,nameEn:englishName.trim()||undefined,taskIcon});onClose();}} className="flex-1 py-2.5 rounded-2xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition">{t.saveChanges}</button></>}>
       <SectionCard title={t.basicInfo}>
-        <Field label={t.taskName}><TextIn value={name} onChange={updateName} ph={t.categoryNamePh}/></Field>
+        <Field label={t.categoryName}><TextIn value={name} onChange={updateName} ph={t.categoryNamePh}/></Field>
         {(hasChinese(name) || englishName) && <Field mb="mb-3"><div className="flex items-center gap-3"><span className="text-xs text-gray-500 font-semibold">Translation (EN):</span><TextIn value={englishName} onChange={setEnglishName} ph="" size="sm" className="flex-1"/></div></Field>}
       </SectionCard>
       <IconPickerField value={taskIcon} onChange={setTaskIcon}/>
@@ -908,7 +912,7 @@ const CreateCategoryModal = ({onClose,onSave}) => {
     <ModalShell title={t.newCategory} onClose={onClose}
       footer={<><Btn onClick={onClose} variant="default" size="md">{t.cancel}</Btn><button onClick={()=>{if(!valid)return;onSave({name,taskIcon,enabled:ei,nameEn:englishName.trim()||undefined});onClose();}} disabled={!valid} className={`flex-1 py-2 rounded-xl text-sm font-bold transition ${valid?"bg-indigo-600 hover:bg-indigo-700 text-white":"opacity-40 cursor-not-allowed bg-gray-200 text-gray-400"}`}>{t.createCategoryBtn}</button></>}>
       <SectionCard title={t.basicInfo}>
-        <Field label={t.taskName}><TextIn value={name} onChange={updateName} ph={t.categoryNamePh}/></Field>
+        <Field label={t.categoryName}><TextIn value={name} onChange={updateName} ph={t.categoryNamePh}/></Field>
         {(hasChinese(name) || englishName) && <Field mb="mb-3"><div className="flex items-center gap-3"><span className="text-xs text-gray-500 font-semibold">Translation (EN):</span><TextIn value={englishName} onChange={setEnglishName} ph="" size="sm" className="flex-1"/></div></Field>}
       </SectionCard>
       <IconPickerField value={taskIcon} onChange={setTaskIcon}/>
@@ -1163,7 +1167,7 @@ const ReviewQueuePage = ({subs,allTasks,onUpdateSubs,onBack,initialTaskFilter=nu
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
                   {batchMode&&<th className="px-4 py-3.5"><input type="checkbox" checked={allShownSel} onChange={toggleAll} className="accent-indigo-600 w-3.5 h-3.5 rounded cursor-pointer"/></th>}
-                  {[t.user,t.taskNameCol,t.status,t.submissionContent].map(h=>(
+                  {[t.user,t.taskNameCol,t.status,t.submissionContent,t.submissionTime].map(h=>(
                     <th key={h} className="text-left px-5 py-3.5 text-xs font-bold uppercase tracking-widest text-gray-400">{h}</th>
                   ))}
                   {showReason&&<th className="text-left px-5 py-3.5 text-xs font-bold uppercase tracking-widest text-rose-400">{t.rejectionReason}</th>}
@@ -1171,7 +1175,7 @@ const ReviewQueuePage = ({subs,allTasks,onUpdateSubs,onBack,initialTaskFilter=nu
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {shown.length===0&&<tr><td colSpan={5 + (batchMode?1:0) + (showReason?1:0)} className="text-center py-14 text-gray-300 text-sm">{t.noSubmissions}</td></tr>}
+                {shown.length===0&&<tr><td colSpan={6 + (batchMode?1:0) + (showReason?1:0)} className="text-center py-14 text-gray-300 text-sm">{t.noSubmissions}</td></tr>}
                 {shown.map(sub=>{
                   const ts = getTaskStatus(sub.taskId);
                   return (
@@ -1202,8 +1206,9 @@ const ReviewQueuePage = ({subs,allTasks,onUpdateSubs,onBack,initialTaskFilter=nu
 };
 
 // ── TaskTable ──────────────────────────────────────────────────────────────────
-const TaskTable = ({categories,subs,statusFilter,onToggleCat,onToggleGroup,onSetTaskStatus,onEditCat,onEditGroup,onEditTask,onQueue,onReorderCat,onReorderUnit,onReorderTask}) => {
+const TaskTable = ({categories,subs,statusFilter,onToggleCat,onToggleGroup,onSetTaskStatus,onEditCat,onEditGroup,onEditTask,onDeleteTask,onDeleteCategory,onQueue,onReorderCat,onReorderUnit,onReorderTask}) => {
   const t = useLang();
+  const lang = useContext(LangCtx);
   const [expCats,setExpCats] = useState(()=>{ const o={}; categories.forEach(c=>{o[c.id]=true;}); return o; });
   const [expGrps,setExpGrps] = useState(()=>{ const o={}; categories.forEach(c=>{c.taskGroups.forEach(g=>{o[g.id]=true;});}); return o; });
   const [confirm,setConfirm] = useState(null);
@@ -1228,6 +1233,7 @@ const TaskTable = ({categories,subs,statusFilter,onToggleCat,onToggleGroup,onSet
       ? {label:t.disable, warning:true, onClick:()=>ask(t.disableTitle(nm),t.disableNote,t.disable,()=>onSetTaskStatus(catId,gid,task.id,"disabled"))}
       : {label:t.enable, onClick:()=>onSetTaskStatus(catId,gid,task.id,"enabled")}
     );
+    items.push({label:t.delete, danger:true, onClick:()=>ask(t.deleteTaskTitle(nm),t.deleteTaskNote,t.delete,()=>onDeleteTask(catId,gid,task.id),"bg-rose-600 hover:bg-rose-700 text-white")});
     return {items, badge:pending};
   };
   const TaskRow = ({task,catId,gid,indent,index,onUp,onDown,du,dd}) => {
@@ -1244,6 +1250,7 @@ const TaskTable = ({categories,subs,statusFilter,onToggleCat,onToggleGroup,onSet
             <div>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <p className="font-semibold text-gray-700 text-sm">{task.name}</p>
+                {task.type&&<span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold border ${task.type==="follow"?"bg-blue-50 text-blue-500 border-blue-100":"bg-violet-50 text-violet-500 border-violet-100"}`}>{TYPE_LABELS[lang][task.type]||task.type}</span>}
                 {task.helpTooltip&&<span title={task.helpTooltip} className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-indigo-100 text-indigo-500 text-[10px] font-black cursor-default shrink-0 border border-indigo-200">?</span>}
                 {task.status==="disabled"&&<Pill col="bg-gray-100 text-gray-400 border border-gray-200">{t.disabled}</Pill>}
               </div>
@@ -1274,7 +1281,8 @@ const TaskTable = ({categories,subs,statusFilter,onToggleCat,onToggleGroup,onSet
               const visUnits = allUnits.filter(u=>u.type==="group"||taskMatch(u.item));
               const cMenu = [
                 {label:t.edit, onClick:()=>onEditCat(cat)},
-                cat.enabled?{label:t.disable,warning:true,onClick:()=>ask(t.disableTitle(cn),t.disableNote,t.disable,()=>onToggleCat(cat.id))}:{label:t.enable,onClick:()=>onToggleCat(cat.id)}
+                cat.enabled?{label:t.disable,warning:true,onClick:()=>ask(t.disableTitle(cn),t.disableNote,t.disable,()=>onToggleCat(cat.id))}:{label:t.enable,onClick:()=>onToggleCat(cat.id)},
+                {label:t.delete, danger:true, onClick:()=>ask(t.deleteCatTitle(cn),t.deleteCatNote,t.delete,()=>onDeleteCategory(cat.id),"bg-rose-600 hover:bg-rose-700 text-white")}
               ];
               return (
                 <Fragment key={cat.id}>
@@ -1347,11 +1355,13 @@ export default function App() {
   const [showCreateCategory,setShowCreateCategory] = useState(false);
   const [showReviewForm,setShowReviewForm] = useState(false);
   const [defaultForm,setDefaultForm] = useState(null);
+  const [deletedTasks,setDeletedTasks] = useState({});
 
   const allActiveTasks = categories.flatMap(c=>[
     ...c.taskGroups.flatMap(g=>g.tasks.map(tk=>({...tk,_catName:c.name}))),
     ...(c.looseTasks||[]).map(tk=>({...tk,_catName:c.name}))
   ]);
+  const allTasksForQueue = [...allActiveTasks,...Object.values(deletedTasks)];
 
   const onToggleCat = cid => setCategories(p=>p.map(c=>c.id===cid?{...c,enabled:!c.enabled}:c));
   const onToggleGroup = (cid,gid) => setCategories(p=>p.map(c=>c.id!==cid?c:{...c,taskGroups:c.taskGroups.map(g=>g.id===gid?{...g,enabled:!g.enabled}:g)}));
@@ -1380,6 +1390,16 @@ export default function App() {
       return cats;
     });
   };
+  const onDeleteTask = (catId,groupId,taskId) => {
+    const cat = categories.find(c=>c.id===catId);
+    const task = cat&&(groupId&&groupId!=="none"
+      ? cat.taskGroups.find(g=>g.id===groupId)?.tasks.find(tk=>tk.id===taskId)
+      : (cat.looseTasks||[]).find(tk=>tk.id===taskId));
+    if(task) setDeletedTasks(p=>({...p,[taskId]:{...task,_catName:cat.name}}));
+    setCategories(p=>p.map(c=>{if(c.id!==catId)return c;if(groupId&&groupId!=="none")return{...c,taskGroups:c.taskGroups.map(g=>g.id===groupId?{...g,tasks:g.tasks.filter(tk=>tk.id!==taskId)}:g)};return{...c,looseTasks:(c.looseTasks||[]).filter(tk=>tk.id!==taskId)};
+    }));
+  };
+  const onDeleteCategory = catId => setCategories(p=>p.filter(c=>c.id!==catId));
   const onSaveForm = (formType,form) => { if(formType==="follow")setSharedFollowForm(form); else if(formType==="comment")setSharedCommentForm(form); };
   const onCreateCategory = ({name,taskIcon,enabled}) => setCategories(p=>[...p,{id:`cat_${Date.now()}`,name,taskIcon:taskIcon||"",enabled,taskGroups:[],looseTasks:[]}]);
   const onCreateTask = (catId,groupId,task,form) => {
@@ -1394,7 +1414,7 @@ export default function App() {
   if (view==="queue") {
     return (
       <LangCtx.Provider value={lang}>
-        <ReviewQueuePage subs={subs} allTasks={allActiveTasks}
+        <ReviewQueuePage subs={subs} allTasks={allTasksForQueue}
           onUpdateSubs={(tid,updated)=>setSubs(p=>({...p,[tid]:updated}))}
           onBack={()=>setView("list")} initialTaskFilter={queueTaskFilter}
           rejectionReasons={rejectionReasons} onRejectionReasonsChange={setRejectionReasons}/>
@@ -1416,15 +1436,17 @@ export default function App() {
         {editCatCtx&&<EditCategoryDrawer category={editCatCtx} onClose={()=>setEditCatCtx(null)} onSave={upd=>{setCategories(p=>p.map(c=>c.id===upd.id?{...c,name:upd.name,nameEn:upd.nameEn,taskIcon:upd.taskIcon}:c));setEditCatCtx(null);}}/>}
         {editCtx&&<EditTaskDrawer task={{...editCtx.task,_catId:editCtx.catId,_groupId:editCtx.groupId||"none"}} categories={categories} sharedFollowForm={sharedFollowForm} sharedCommentForm={sharedCommentForm} onClose={()=>setEditCtx(null)} onSave={u=>{onSaveTask(u);setEditCtx(null);}} onSaveForm={onSaveForm} defaultForm={defaultForm} onSetDefaultForm={setDefaultForm}/>}
         <div className="px-6 py-8 max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-            <div><h1 className="text-2xl font-extrabold text-gray-900">{t.taskCentre}</h1><p className="text-sm text-gray-400 mt-1">{t.manageDesc}</p></div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <MultiStatusFilter value={statusFilter} onChange={setStatusFilter} label={t.filterByStatus}/>
-              <div className="w-px h-6 bg-gray-200"/>
-              <button onClick={()=>setShowCreateCategory(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition">{t.createCategory}</button>
-              <button onClick={()=>setShowReviewForm(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition">{t.editReviewForm}</button>
-              <button onClick={()=>setShowCreateTask(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition">{t.createTask}</button>
-              <button onClick={()=>goQueue(null)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-50 border border-violet-200 text-violet-700 text-sm font-semibold hover:bg-violet-100 transition">
+          <div className="mb-6">
+            <div className="mb-4"><h1 className="text-2xl font-extrabold text-gray-900">{t.taskCentre}</h1><p className="text-sm text-gray-400 mt-1">{t.manageDesc}</p></div>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
+                <MultiStatusFilter value={statusFilter} onChange={setStatusFilter} label={t.filterByStatus}/>
+                <div className="w-px h-6 bg-gray-200"/>
+                <button onClick={()=>setShowCreateCategory(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition">{t.createCategory}</button>
+                <button onClick={()=>setShowReviewForm(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition">{t.editReviewForm}</button>
+                <button onClick={()=>setShowCreateTask(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition">{t.createTask}</button>
+              </div>
+              <button onClick={()=>goQueue(null)} className="flex shrink-0 items-center gap-2 px-4 py-2 rounded-xl bg-violet-50 border border-violet-200 text-violet-700 text-sm font-semibold hover:bg-violet-100 transition">
                 {t.manageSubmissions}{pendingCount>0&&<span className="bg-amber-500 text-white text-xs font-bold rounded-full px-2 py-0.5">{pendingCount}</span>}
               </button>
             </div>
@@ -1433,6 +1455,7 @@ export default function App() {
             onToggleCat={onToggleCat} onToggleGroup={onToggleGroup} onSetTaskStatus={onSetTaskStatus}
             onEditCat={cat=>setEditCatCtx(cat)} onEditGroup={()=>{}}
             onEditTask={(task,catId,groupId)=>setEditCtx({task,catId,groupId})}
+            onDeleteTask={onDeleteTask} onDeleteCategory={onDeleteCategory}
             onQueue={goQueue} onReorderCat={onReorderCat} onReorderUnit={onReorderUnit} onReorderTask={onReorderTask}/>
         </div>
       </div>
