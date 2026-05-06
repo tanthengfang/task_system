@@ -573,7 +573,7 @@ const FormPreview = ({form,lang}) => {
 };
 
 // ── FormBuilder ────────────────────────────────────────────────────────────────
-const FormBuilder = ({form,setForm,defaultForm,onSetDefault,onUseDefault,disableAddQuestion=false}) => {
+const FormBuilder = ({form,setForm,defaultForm,onSetDefault,onUseDefault,disableAddQuestion=false,hidePreview=false}) => {
   const t = useLang();
   const lang = useContext(LangCtx);
   const [el,setEl] = useState("zh");
@@ -630,7 +630,7 @@ const FormBuilder = ({form,setForm,defaultForm,onSetDefault,onUseDefault,disable
       )}
       <div className="flex items-center justify-ends gap-1.5 flex-nowrap">
         <div className="flex items-center gap-1.5 shrink-0">
-          <button onClick={()=>{setPreviewLang("en");setShowPreview(true);}} className="px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-600 transition whitespace-nowrap">👁 {t.preview}</button>
+          {!hidePreview && <button onClick={()=>{setPreviewLang("en");setShowPreview(true);}} className="px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-600 transition whitespace-nowrap">👁 {t.preview}</button>}
         </div>
         <div className="flex gap-1 shrink-0">
           {!disableAddQuestion && <>
@@ -781,10 +781,9 @@ const EditTaskDrawer = ({task,categories,sharedFollowForm,sharedCommentForm,onCl
 };
 
 // ── CreateTaskModal ────────────────────────────────────────────────────────────
-const CreateTaskModal = ({categories,onClose,onSave,defaultForm,onSetDefaultForm}) => {
+const CreateTaskModal = ({categories,onClose,onSave}) => {
   const t = useLang();
   const lang = useContext(LangCtx);
-  const [step,setStep] = useState("task");
   const [taskType,setTaskType] = useState("follow");
   const [name,setName] = useState("");
   const [desc,setDesc] = useState("");
@@ -800,12 +799,13 @@ const CreateTaskModal = ({categories,onClose,onSave,defaultForm,onSetDefaultForm
   const [taskImage,setTaskImage] = useState(null);
   const [templates,setTemplates] = useState(JSON.parse(JSON.stringify(INIT_COMMENT_TEMPLATES)));
   const getInitForm = type => type==="follow"?JSON.parse(JSON.stringify(INIT_FOLLOW_FORM)):JSON.parse(JSON.stringify(INIT_COMMENT_FORM));
-  const [localForm,setLocalForm] = useState(getInitForm("follow"));
-  const [formSaved,setFormSaved] = useState(false);
+  const [localForm,setLocalForm] = useState(getInitForm("follow")); // preview-only
+  const [showFormPreview,setShowFormPreview] = useState(false);
+  const [previewLang,setPreviewLang] = useState("en");
   const cfg = TASK_TYPE_CONFIG[taskType];
   const valid = name.trim();
   const imageHint = taskType==="follow"?t.taskImageHintFollow:t.taskImageHintComment;
-  const switchType = type => { setTaskType(type); setLocalForm(getInitForm(type)); setFormSaved(false); if(type==="comment")setTemplates(JSON.parse(JSON.stringify(INIT_COMMENT_TEMPLATES))); };
+  const switchType = type => { setTaskType(type); setLocalForm(getInitForm(type)); if(type==="comment")setTemplates(JSON.parse(JSON.stringify(INIT_COMMENT_TEMPLATES))); };
   const updateName = v => {
     setName(v);
     const auto = hasChinese(v) ? autoTranslate(v) : "";
@@ -819,20 +819,9 @@ const CreateTaskModal = ({categories,onClose,onSave,defaultForm,onSetDefaultForm
   const save = () => {
     if (!valid) return;
     const task = {id:`task_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,type:taskType,name,desc,reward,ver:cfg.ver,status:enableNow?"enabled":"disabled",url,taskImage,helpTooltip,nameEn:englishName.trim()||undefined,descEn:englishDesc.trim()||undefined,templates:taskType==="comment"?templates:null};
-    onSave(catId,null,task,localForm);
+    onSave(catId,null,task,null);
     onClose();
   };
-  if (step==="form") {
-    return (
-      <ModalShell title={name||t.newTask} subtitle={t.reviewForm} onClose={()=>setStep("task")}
-        footer={<><Btn onClick={()=>setStep("task")} variant="default" size="md">← Back</Btn><button onClick={()=>{setFormSaved(true);setStep("task");}} className="flex-1 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold transition">{t.saveForm}</button></>}>
-        <FormBuilder form={localForm} setForm={setLocalForm} defaultForm={defaultForm}
-          onSetDefault={()=>onSetDefaultForm(JSON.parse(JSON.stringify(localForm)))}
-          onUseDefault={()=>setLocalForm(JSON.parse(JSON.stringify(defaultForm)))}
-          disableAddQuestion={taskType==="follow"||taskType==="comment"}/>
-      </ModalShell>
-    );
-  }
   return (
     <ModalShell title={t.newTask} onClose={onClose}
       footer={<><Btn onClick={onClose} variant="default" size="md">{t.cancel}</Btn><button onClick={save} disabled={!valid} className={`flex-1 py-2 rounded-xl text-sm font-bold transition ${valid?"bg-indigo-600 hover:bg-indigo-700 text-white":"opacity-40 cursor-not-allowed bg-gray-200 text-gray-400"}`}>{t.createTaskBtn}</button></>}>
@@ -868,11 +857,28 @@ const CreateTaskModal = ({categories,onClose,onSave,defaultForm,onSetDefaultForm
       <SectionCard title={t.targetUrl}><Field label={t.targetUrlLabel(name||"Task")} hint={t.targetUrlHint}><TextIn value={url} onChange={setUrl} ph="https://..."/></Field></SectionCard>
       <ImageUploadField value={taskImage} onChange={setTaskImage} label={t.taskImage} hint={imageHint}/>
       {taskType==="comment" && <CommentTemplatesEditor templates={templates} setTemplates={setTemplates}/>}
+      {showFormPreview&&(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={()=>setShowFormPreview(false)}/>
+          <div className="relative bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col" style={{maxHeight:"90vh"}}>
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 bg-white shrink-0">
+              <p className="text-sm font-bold text-gray-900">{t.preview}</p>
+              <div className="flex items-center gap-2">
+                <div className="flex border border-gray-200 rounded-xl overflow-hidden">
+                  {["en","zh"].map(l=><button key={l} onClick={()=>setPreviewLang(l)} className={`px-3 py-1 text-xs font-bold transition ${previewLang===l?"bg-indigo-600 text-white":"bg-white text-gray-500 hover:bg-gray-50"}`}>{l==="en"?"🇬🇧 EN":"🇨🇳 ZH"}</button>)}
+                </div>
+                <button onClick={()=>setShowFormPreview(false)} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full text-lg leading-none ml-1">×</button>
+              </div>
+            </div>
+            <div className="overflow-y-auto px-6 py-5"><FormPreview form={localForm} lang={previewLang}/></div>
+          </div>
+        </div>
+      )}
       <SectionCard title={t.reviewForm}>
         <p className="text-xs text-gray-400 mb-3">{t.createReviewFormHint}</p>
-        <button onClick={()=>setStep("form")} className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-dashed border-indigo-200 text-sm text-indigo-600 hover:bg-indigo-50 hover:border-indigo-400 transition group">
-          <div className="flex items-center gap-2"><span>📋</span><span className="font-semibold">{formSaved?"✓ ":""}{t.editReviewForm}</span></div>
-          <span className="text-indigo-300 group-hover:text-indigo-500 text-xs">{t.open}</span>
+        <button onClick={()=>setShowFormPreview(true)} className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-dashed border-gray-200 text-sm text-gray-500 hover:bg-gray-50 hover:border-gray-400 transition group">
+          <div className="flex items-center gap-2"><span>📋</span><span className="font-semibold">{t.preview}</span></div>
+          <span className="text-gray-300 group-hover:text-gray-500 text-xs">{t.open}</span>
         </button>
       </SectionCard>
       <SectionCard title={t.publishSettings}>
@@ -945,11 +951,11 @@ const ReviewFormManagerModal = ({onClose,sharedFollowForm,setSharedFollowForm,sh
               <button key={type} onClick={()=>setFormType(type)} className={`px-4 py-2 rounded-lg text-xs font-bold transition ${formType===type?"bg-white text-indigo-600 shadow-sm":"text-gray-600 hover:text-gray-900"}`}>{label}</button>
             ))}
           </div>
-          
+          <button onClick={()=>{setPreviewLang("en");setShowPreview(true);}} className="px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-600 transition whitespace-nowrap">👁 {t.preview}</button>
         </div>
         <FormBuilder form={currentForm} setForm={setCurrentForm} defaultForm={defaultForm}
           onSetDefault={()=>onSetDefaultForm(JSON.parse(JSON.stringify(currentForm)))}
-          onUseDefault={()=>{setCurrentForm(JSON.parse(JSON.stringify(defaultForm)));}} disableAddQuestion={true}/>
+          onUseDefault={()=>{setCurrentForm(JSON.parse(JSON.stringify(defaultForm)));}} disableAddQuestion={true} hidePreview={true}/>
       </ModalShell>
     </>
   );
@@ -1406,7 +1412,7 @@ export default function App() {
         </div>
         {showCreateCategory&&<CreateCategoryModal onClose={()=>setShowCreateCategory(false)} onSave={onCreateCategory}/>}
         {showReviewForm&&<ReviewFormManagerModal onClose={()=>setShowReviewForm(false)} sharedFollowForm={sharedFollowForm} setSharedFollowForm={setSharedFollowForm} sharedCommentForm={sharedCommentForm} setSharedCommentForm={setSharedCommentForm} defaultForm={defaultForm} onSetDefaultForm={setDefaultForm}/>}
-        {showCreateTask&&<CreateTaskModal categories={categories} onClose={()=>setShowCreateTask(false)} onSave={onCreateTask} defaultForm={defaultForm} onSetDefaultForm={setDefaultForm}/>}
+        {showCreateTask&&<CreateTaskModal categories={categories} onClose={()=>setShowCreateTask(false)} onSave={onCreateTask}/>}
         {editCatCtx&&<EditCategoryDrawer category={editCatCtx} onClose={()=>setEditCatCtx(null)} onSave={upd=>{setCategories(p=>p.map(c=>c.id===upd.id?{...c,name:upd.name,nameEn:upd.nameEn,taskIcon:upd.taskIcon}:c));setEditCatCtx(null);}}/>}
         {editCtx&&<EditTaskDrawer task={{...editCtx.task,_catId:editCtx.catId,_groupId:editCtx.groupId||"none"}} categories={categories} sharedFollowForm={sharedFollowForm} sharedCommentForm={sharedCommentForm} onClose={()=>setEditCtx(null)} onSave={u=>{onSaveTask(u);setEditCtx(null);}} onSaveForm={onSaveForm} defaultForm={defaultForm} onSetDefaultForm={setDefaultForm}/>}
         <div className="px-6 py-8 max-w-6xl mx-auto">
