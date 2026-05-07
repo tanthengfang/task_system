@@ -6,7 +6,7 @@ const T = {
     task:"Task", reward:"Reward", actions:"Actions", disabled:"Disabled", enabled:"Enabled",
     pending:"Pending", approved:"Approved", rejected:"Rejected",
     edit:"Edit", enable:"Enable", disable:"Disable", delete:"Delete", viewSubmissions:"View Submissions",
-    deleteTaskTitle:(l)=>`Delete "${l}"?`, deleteTaskNote:"This will permanently remove the task and all its submissions.",
+    deleteTaskTitle:(l)=>`Delete "${l}"?`, deleteTaskNote:"This will permanently remove the task but the submissions will be retained for record-keeping.",
     deleteCatTitle:(l)=>`Delete "${l}"?`, deleteCatNote:"This will permanently remove the category and all tasks inside it.",
     back:"← Back", editTask:"Edit Task", basicInfo:"Basic Info",
     taskName:"Task Name", description:"Description", category:"Category",
