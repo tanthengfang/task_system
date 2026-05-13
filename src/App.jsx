@@ -1283,7 +1283,6 @@ const TaskTable = ({categories,subs,statusFilter,onToggleCat,onToggleGroup,onSet
               const cMenu = [
                 {label:t.edit, onClick:()=>onEditCat(cat)},
                 cat.enabled?{label:t.disable,warning:true,onClick:()=>ask(t.disableTitle(cn),t.disableNote,t.disable,()=>onToggleCat(cat.id))}:{label:t.enable,onClick:()=>onToggleCat(cat.id)},
-                {label:t.delete, danger:true, onClick:()=>ask(t.deleteCatTitle(cn),t.deleteCatNote,t.delete,()=>onDeleteCategory(cat.id),"bg-rose-600 hover:bg-rose-700 text-white")}
               ];
               return (
                 <Fragment key={cat.id}>
