@@ -188,7 +188,10 @@ const INIT_CATEGORIES = [
     mkTask("t1","follow","Follow our X account!","Follow the official HZVPN X account and earn credits.",5,{url:"https://x.com/hzvpn"}),
     mkTask("t3","comment","Comment on our post!","Leave a comment on our latest X post using the provided template.",5,{url:"https://x.com/hzvpn/status/latest"}),
     mkTask("t5","comment","Comment on our post (Campaign 2)!","Leave a comment on our Campaign 2 X post.",5,{url:"https://x.com/hzvpn/status/campaign2"})
-  ]}
+  ]},
+  { id:"cat_ig", name:"Interact with us on Instagram!", enabled:true, taskGroups:[], taskIcon:"ig", looseTasks:[] },
+  { id:"cat_xhs", name:"Interact with us on RedNote!", enabled:true, taskGroups:[], taskIcon:"xhs", looseTasks:[] },
+  { id:"cat_fb", name:"Interact with us on Facebook!", enabled:true, taskGroups:[], taskIcon:"fb", looseTasks:[] },
 ];
 
 const mkSub = (id,tid,user,st,url,un,reason,date) => ({id,taskId:tid,user,status:st,url:url||"",username:un||"",reason:reason||"",updated:date});
@@ -705,7 +708,6 @@ const EditCategoryDrawer = ({category,onClose,onSave}) => {
   const [name,setName] = useState(category.name||"");
   const [englishName,setEnglishName] = useState(category.nameEn||"");
   const [lastAutoName,setLastAutoName] = useState(category.nameEn||"");
-  const [taskIcon,setTaskIcon] = useState(category.taskIcon||"");
   const updateName = v => {
     setName(v);
     const auto = hasChinese(v) ? autoTranslate(v) : "";
@@ -713,12 +715,11 @@ const EditCategoryDrawer = ({category,onClose,onSave}) => {
   };
   return (
     <DrawerShell title={name||t.editGroupTitle} subtitle={t.editGroupTitle} onClose={onClose}
-      footer={<><Btn onClick={onClose} variant="default" size="md">{t.cancel}</Btn><button onClick={()=>{onSave({...category,name,nameEn:englishName.trim()||undefined,taskIcon});onClose();}} className="flex-1 py-2.5 rounded-2xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition">{t.saveChanges}</button></>}>
+      footer={<><Btn onClick={onClose} variant="default" size="md">{t.cancel}</Btn><button onClick={()=>{onSave({...category,name,nameEn:englishName.trim()||undefined});onClose();}} className="flex-1 py-2.5 rounded-2xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition">{t.saveChanges}</button></>}>
       <SectionCard title={t.basicInfo}>
         <Field label={t.categoryName}><TextIn value={name} onChange={updateName} ph={t.categoryNamePh}/></Field>
         {(hasChinese(name) || englishName) && <Field mb="mb-3"><div className="flex items-center gap-3"><span className="text-xs text-gray-500 font-semibold">Translation (EN):</span><TextIn value={englishName} onChange={setEnglishName} ph="" size="sm" className="flex-1"/></div></Field>}
       </SectionCard>
-      <IconPickerField value={taskIcon} onChange={setTaskIcon}/>
     </DrawerShell>
   );
 };
@@ -1320,14 +1321,14 @@ const TaskTable = ({categories,subs,statusFilter,onToggleCat,onToggleGroup,onSet
                             const ati = grp.tasks.findIndex(tk=>tk.id===task.id);
                             return <TaskRow key={task.id} task={task} catId={cat.id} gid={grp.id} indent="pl-16" index={ti} onUp={()=>onReorderTask(cat.id,grp.id,ati,-1)} onDown={()=>onReorderTask(cat.id,grp.id,ati,1)} du={ati===0} dd={ati===grp.tasks.length-1}/>;
                           })}
-                          {ge&&visT.length===0&&<tr className="border-b border-gray-50"><td colSpan={3} className="px-6 py-3 text-xs text-gray-300 italic pl-20">No matching tasks.</td></tr>}
+                          {ge&&visT.length===0&&grp.tasks.length>0&&<tr className="border-b border-gray-50"><td colSpan={3} className="px-6 py-3 text-xs text-gray-300 italic pl-20">No matching tasks.</td></tr>}
                         </Fragment>
                       );
                     }
                     const task = unit.item;
                     return <TaskRow key={task.id} task={task} catId={cat.id} gid={null} indent="pl-10" index={null} onUp={()=>onReorderUnit(cat.id,aui,-1)} onDown={()=>onReorderUnit(cat.id,aui,1)} du={aui===0} dd={aui===allUnits.length-1}/>;
                   })}
-                  {exp&&visUnits.length===0&&<tr className="border-b border-gray-50"><td colSpan={3} className="px-6 py-4 text-xs text-gray-300 italic pl-10">No matching tasks.</td></tr>}
+                  {exp&&visUnits.length===0&&allUnits.length>0&&<tr className="border-b border-gray-50"><td colSpan={3} className="px-6 py-4 text-xs text-gray-300 italic pl-10">No matching tasks.</td></tr>}
                 </Fragment>
               );
             })}
@@ -1442,8 +1443,7 @@ export default function App() {
               <div className="flex items-center gap-2 flex-wrap">
                 <MultiStatusFilter value={statusFilter} onChange={setStatusFilter} label={t.filterByStatus}/>
                 <div className="w-px h-6 bg-gray-200"/>
-                <button onClick={()=>setShowCreateCategory(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition">{t.createCategory}</button>
-                <button onClick={()=>setShowReviewForm(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition">{t.editReviewForm}</button>
+                  <button onClick={()=>setShowReviewForm(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition">{t.editReviewForm}</button>
                 <button onClick={()=>setShowCreateTask(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition">{t.createTask}</button>
               </div>
               <button onClick={()=>goQueue(null)} className="flex shrink-0 items-center gap-2 px-4 py-2 rounded-xl bg-violet-50 border border-violet-200 text-violet-700 text-sm font-semibold hover:bg-violet-100 transition">
