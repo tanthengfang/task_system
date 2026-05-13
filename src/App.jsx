@@ -189,9 +189,9 @@ const INIT_CATEGORIES = [
     mkTask("t3","comment","Comment on our post!","Leave a comment on our latest X post using the provided template.",5,{url:"https://x.com/hzvpn/status/latest"}),
     mkTask("t5","comment","Comment on our post (Campaign 2)!","Leave a comment on our Campaign 2 X post.",5,{url:"https://x.com/hzvpn/status/campaign2"})
   ]},
-  { id:"cat_ig", name:"Interact with us on Instagram!", enabled:true, taskGroups:[], taskIcon:"ig", looseTasks:[] },
-  { id:"cat_xhs", name:"Interact with us on RedNote!", enabled:true, taskGroups:[], taskIcon:"xhs", looseTasks:[] },
-  { id:"cat_fb", name:"Interact with us on Facebook!", enabled:true, taskGroups:[], taskIcon:"fb", looseTasks:[] },
+  { id:"cat_ig", name:"Interact with us on Instagram!", enabled:false, taskGroups:[], taskIcon:"ig", looseTasks:[] },
+  { id:"cat_xhs", name:"Interact with us on RedNote!", enabled:false, taskGroups:[], taskIcon:"xhs", looseTasks:[] },
+  { id:"cat_fb", name:"Interact with us on Facebook!", enabled:false, taskGroups:[], taskIcon:"fb", looseTasks:[] },
 ];
 
 const mkSub = (id,tid,user,st,url,un,reason,date) => ({id,taskId:tid,user,status:st,url:url||"",username:un||"",reason:reason||"",updated:date});
